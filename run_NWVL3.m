@@ -1,4 +1,4 @@
-function [CL,CL2,CX,CM, ai, y] = run_NWVL3(alpha_in, dCJs, dFs, verbose, useTAT, blow_center)
+function [CL,CL1,CX,CM, ai, y] = run_NWVL3(alpha_in, dCJs, dFs, verbose, useTAT, blow_center, blowing_model)
 %Solves the nonlinear VL system using Newton method.
 
 
@@ -36,7 +36,7 @@ dF = dFs(2);
      a0_ub = 0;
      cl_nom_b = 2*pi*alpha;
  else
-     [~,~,~,~,cl_nom_b] = POC_lin(alpha,dCJ, dF,verbose); %POC aero model
+     [~,~,~,~,cl_nom_b] = POC_lin(alpha,dCJ, dF,verbose, blowing_model); %POC aero model
  end
 
 
@@ -65,7 +65,7 @@ err = 1e6;
 max_iter = 100;
 iter = 0;
 thresh = 1e-3;
-f = @(t,Gam) get_Gam_R(Gam, vortex, ra, rb, alpha,dCJs_v,dFs_v,N,vortex_cs,unblown, useTAT); 
+f = @(t,Gam) get_Gam_R(Gam, vortex, ra, rb, alpha,dCJs_v,dFs_v,N,vortex_cs,unblown, useTAT, blowing_model); 
 fac = [];
 while err > thresh && iter < max_iter
     r0 = f(1,Gam);
@@ -173,8 +173,14 @@ else
             [cl_t(i),cx_t(i)] = get_unblown_coeffs(a_eff(i)*180/pi, cl_unblown, cd_unblown, alpha_unblown, cm_unblown);
             cm_t(i) = -.1;%Placeholder cm
         else
+            if blowing_model == 1
             %Use wind tunnel data
             [cl_t(i),cx_t(i),cm_t(i)] = get_coeffs_wing(a_eff(i)*180/pi,dCJs_v(i),dFs_v(i)*180/pi,1);
+            elseif blowing_model == 2
+            [cl_t(i),cx_t(i),cm_t(i)] = get_TATcl(a_eff(i),dCJs_v(i),dFs_v(i));
+            else
+                fprintf(1, "Invalid blown lift model")
+            end
         end
     end
 end
@@ -211,7 +217,7 @@ if verbose
     legend("Trefftz Plane")
     saveas(fd,"Downwash.pdf")
 end
-CL2 = trapz(y,cls.*vortex_cs')/Sref;
+CL = trapz(y,cls.*vortex_cs')/Sref;
 CXp  = trapz(y,cxs.*vortex_cs')/Sref;
 CM  = trapz(y,cms.*vortex_cs')/(Sref*cbar);
 Cl  = trapz(y,cls.*vortex_cs'.*y')/(Sref*b);
@@ -233,15 +239,16 @@ if verbose
     disp('  ')
     disp('Resulting coefficients')
     disp('==================')
-    disp(['CL (from F matrix)      = ',num2str(CL)])
+    %disp(['CL (from F matrix)      = ',num2str(CL)])
+    disp(['CL (from a_eff)         = ',num2str(CL)])
     disp(['CL (check, from gamma)  = ',num2str(CL1)])
-    disp(['CL (check, from a_eff)  = ',num2str(CL2)])
+    
     disp(['cl (nominal)            = ',num2str(cl_nom_b)])
-    disp(['CDi (from F matrix)     = ',num2str(Cdi)])
-    disp(['CDi (check,CL^2/(AR*pi))= ',num2str(CDi2)])
+    %disp(['CDi (from F matrix)     = ',num2str(Cdi)])
     disp(['CDi (trefftz))          = ',num2str(Di/(.5*rho*Vinf^2*Sref))])
+    disp(['CDi (check,CL^2/(AR*pi))= ',num2str(CDi2)])
     disp(['CXp                     = ',num2str(CXp)])
-    disp(['CXnet                   = ',num2str(CX)])
+    disp(['CXnetw                  = ',num2str(CX)])
     disp(['CM                      = ',num2str(CM)])
     disp(['CY                      = ',num2str(CY)])
     disp(['Cl (roll moment coeff.) = ',num2str(Cl)])

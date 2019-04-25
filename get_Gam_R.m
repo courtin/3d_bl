@@ -1,4 +1,4 @@
-function [R, Gam_new] = get_Gam_R(Gam, vortex, ra, rb, alpha,dCJs,dF,N,cs,unblown, useTAT)
+function [R, Gam_new] = get_Gam_R(Gam, vortex, ra, rb, alpha,dCJs,dF,N,cs,unblown, useTAT, blowing_model)
 %GET_GAM_R returns the residual, which is the difference between the
 %assumed Gamma distribution Gam, and the new Gamma computed from that
 %distribution. 
@@ -19,11 +19,17 @@ else
     for i = 1:N
         if dCJs(i) == 0 && dF(i) == 0
             %Use lookup for bw02b airfoil
-            [cl_t(i),cx_t(i)] = get_unblown_coeffs(a_eff(i)*180/pi, unblown.cl, unblown.cd, unblown.alpha, unblown.cm);
-            cm_t(i) = -.1;%Placeholder cm
+            [cl_t(i),cx_t(i), cm_t(i)] = get_unblown_coeffs(a_eff(i)*180/pi, unblown.cl, unblown.cd, unblown.alpha, unblown.cm);
+            %cm_t(i) = -.1;%Placeholder cm
         else
+            if blowing_model == 1
             %Use wind tunnel data
             [cl_t(i),cx_t(i),cm_t(i)] = get_coeffs_wing(a_eff(i)*180/pi,dCJs(i),dF(i)*180/pi,1);
+            elseif blowing_model == 2
+            [cl_t(i),cx_t(i),cm_t(i)] = get_TATcl(a_eff(i),dCJs(i),dF(i));
+            else
+                fprintf(1, "Invalid blown lift model")
+            end
         end
     end
 end
