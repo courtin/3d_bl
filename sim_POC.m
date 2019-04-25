@@ -51,7 +51,7 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
         V = 5.5;         %m/s
         V = 10;         %m/s
 %                      M1  M2  M3  M4  M5  M6  M7  M8                     
-        throttles   =  [0   1   1   1   1   1   1   0]*.75;
+        throttles   =  [1   1   1   1   1   1   1   1]*.75;
 %                      F1  F2  F3  F4 
         flaps       =  [40 40 40 40].*pi/180;
 
