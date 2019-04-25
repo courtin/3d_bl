@@ -1,7 +1,7 @@
 function [cla_b,cla_ub,...
     a0_b,a0_ub,...
     cl_nom_b,cl_nom_ub,...
-    cl0_b,cl0_ub] = POC_lin(alpha_nom,dCJ, dF, verbose)
+    cl0_b,cl0_ub] = POC_lin(alpha_nom,dCJ, dF, verbose, blowing_model)
 %Linearized section model for the POC vehicle, blending wind tunnel data
 %and xfoil analysis of bw02b airfoil section.
 
@@ -41,13 +41,13 @@ if verbose
     xlabel('Angle of attack (deg)')
     ylabel('c_l')
 end
-[cla_ub, cl0_ub, a0_ub, cl_nom_ub] = get_blown_cla(alpha_lin_ub, 0, 0, cl_unblown, cd_unblown, alpha_unblown, cm_unblown);
+[cla_ub, cl0_ub, a0_ub, cl_nom_ub] = get_blown_cla(alpha_lin_ub, 0, 0, cl_unblown, cd_unblown, alpha_unblown, cm_unblown, blowing_model);
 
 if verbose
     plot([a0_ub, alpha_lin_ub].*180/pi, [0, interp1(AoAs, cls_ub, alpha_lin_ub*180/pi)], 'kx--')
 end
 if dCJ ~= 0 %only use the wind tunnel model if there is blowing
-    [cla_b, cl0_b, a0_b, cl_nom_b] = get_blown_cla(alpha_lin, dCJ, dF, cl_unblown, cd_unblown, alpha_unblown, cm_unblown);
+    [cla_b, cl0_b, a0_b, cl_nom_b] = get_blown_cla(alpha_lin, dCJ, dF, cl_unblown, cd_unblown, alpha_unblown, cm_unblown, blowing_model);
 else
     cla_b = cla_ub;
     cl0_b = cl0_ub;

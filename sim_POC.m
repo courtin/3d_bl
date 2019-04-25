@@ -1,4 +1,4 @@
-function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, verbose, blow_center)
+function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, verbose, blow_center, blowing_model)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %sim_POC returns the aero force coefficients and tail flow condition for
 %the 30% proof-of-concept vehicle.  It uses a vortex lattice method in
@@ -33,6 +33,11 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
 %                               is treated as a continuation of the blown 
 %                               wing or an unblown, undeflected airfoil. 1
 %                               = blown, 0 = no blowing. 
+%       blowing_model   [-]  flag that controls what model is used to
+%                           predict the 2D performance of blown wing
+%                           sections. 
+%                           1 = wind tunnel data. 
+%                           2 = TAT model, per Maskell and Spence
 %
 %Outputs: 
 %       CL              [-] Wing lift coefficient
@@ -50,10 +55,11 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
 %                      F1  F2  F3  F4 
         flaps       =  [40 40 40 40].*pi/180;
 
-        alpha = 15;
+        alpha = 25;
         
         verbose = 1;
         blow_center = 0;
+        blowing_model = 2;
     end
 
     useTAT = 0;
@@ -102,7 +108,7 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
     end
     
     %Solve for the induced angles on the wing and resulting net forces
-    [~,CL,CXw, CM, ai, y] = run_NWVL3(alpha, dCJs, flaps, verbose, useTAT, blow_center);
+    [CL,~,CXw, CM, ai, y] = run_NWVL3(alpha, dCJs, flaps, verbose, useTAT, blow_center, blowing_model);
     
     %Add simple additional drag estimate for other vehicle components (skin
     %friction only)
