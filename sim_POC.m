@@ -51,11 +51,11 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
         V = 5.5;         %m/s
         V = 10;         %m/s
 %                      M1  M2  M3  M4  M5  M6  M7  M8                     
-        throttles   =  [1   1   1   1   1   1   1   1]*.75;
+        throttles   =  [0   1   1   1   1   1   1   0]*.75;
 %                      F1  F2  F3  F4 
         flaps       =  [40 40 40 40].*pi/180;
 
-        alpha = 25;
+        alpha = 15;
         
         verbose = 1;
         blow_center = 0;
@@ -79,6 +79,7 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
     CJ_diff     = zeros(1,T);                    %Get the dCJ of each unique motor
     dCJ_diff    = zeros(1,T);
     Ps_diff     = zeros(1,T);
+    T_diff      = zeros(1,T);
     
     for i = 1:T
         if diff_t(i) > 0
@@ -91,6 +92,7 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
             CJ_diff(i) = hd_c*(VJ^2/V^2 + VJ/V);
             dCJ_diff(i) = hd_c*(VJ^2/V^2-1)*(V/VJ+1);
             Ps_diff(i) = Pshaft_W;
+            T_diff(i) = T_N;
         else
             CJ_diff(i) = hd_c*2;
             dCJ_diff = 0;
@@ -100,11 +102,13 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
     CJs     = zeros(1,Nmotor);
     dCJs    = zeros(1,Nmotor);
     Ps      = zeros(1,Nmotor);
+    Ts      = zeros(1,Nmotor);
     
     for i = 1:Nmotor
         CJs(i) = CJ_diff(it(i));
         dCJs(i) = dCJ_diff(it(i));
         Ps(i) = Ps_diff(it(i));
+        Ts(i) = T_diff(it(i));
     end
     
     %Solve for the induced angles on the wing and resulting net forces
@@ -118,13 +122,15 @@ function [CL, CXt, CM, ai_t_avg, CL_t] = sim_POC(V, alpha, throttles, flaps, ver
     Sref = airplane.geometry.Wing.Sref;
     W = airplane.weight.W;
     bh = airplane.geometry.Htail.b;
-    
+    N2lbf = 0.224809;
     [CDp, Drag_Decomp] = getProfileDrag(airplane, 0, 0.05, 'clean');
     fexcr = 1.1;
     CDp = CDp*fexcr;
     CL_stall = 2*W/(rho*V^2*Sref);
     CXt = CXw+CDp;
     disp(['Total shaft power       = ',num2str(sum(Ps)), ' W'])
+    disp(['Total "thrust"          = ',num2str(sum(Ts)), ' N ( ',num2str(sum(Ts)*N2lbf), ' lbf)'])
+    disp(['Effective T/W           = ',num2str(sum(Ts)/W)])
     disp(['CDp                     = ',num2str(CDp)])
     disp(['CXtot                   = ',num2str(CXt)])
     disp(['CL_stall                = ',num2str(CL_stall)])
